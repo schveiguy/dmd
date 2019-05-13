@@ -913,7 +913,7 @@ extern (C++) final class Module : Package
             scope p = new Parser!ASTCodegen(this, buf, docfile !is null, diagnosticReporter);
             p.nextToken();
             members = p.parseModule();
-            md = p.md;
+            //md = p.md;
             numlines = p.scanloc.linnum;
             if (p.errors)
                 ++global.errors;
@@ -1324,6 +1324,17 @@ extern (C++) final class Module : Package
     bool isCoreModule(Identifier ident)
     {
         return this.ident == ident && parent && parent.ident == Id.core && !parent.parent;
+    }
+
+    final void afterModuleDeclaration(ModuleDeclaration *md)
+    {
+        this.md = md;
+
+        if(!isRoot() && Compiler.onImport(this))
+        {
+            importedFrom = this;
+            assert(isRoot());
+        }
     }
 
     // Back end

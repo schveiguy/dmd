@@ -1477,6 +1477,15 @@ struct ASTBase
             srcfile = new File(srcfilename);
         }
 
+        final bool isRoot() const
+        {
+            return true;
+        }
+
+        final void afterModuleDeclaration(ModuleDeclaration* md)
+        {
+        }
+
         override void accept(Visitor v)
         {
             v.visit(this);

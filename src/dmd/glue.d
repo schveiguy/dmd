@@ -758,8 +758,16 @@ void FuncDeclaration_toObjFile(FuncDeclaration fd, bool multiobj)
     if (!fd.fbody)
         return;
 
+    Module m = null;
+    for(Dsymbol p = fd.parent; p; p = p.parent)
+    {
+        m = p.isModule();
+        if(m)
+            break;
+    }
+
     UnitTestDeclaration ud = fd.isUnitTestDeclaration();
-    if (ud && !global.params.useUnitTests)
+    if (ud && (!global.params.useUnitTests || !m.isRoot))
         return;
 
     if (multiobj && !fd.isStaticDtorDeclaration() && !fd.isStaticCtorDeclaration() && !fd.isCrtCtorDtor)
@@ -891,15 +899,6 @@ void FuncDeclaration_toObjFile(FuncDeclaration fd, bool multiobj)
 
     symtab_t *symtabsave = cstate.CSpsymtab;
     cstate.CSpsymtab = &f.Flocsym;
-
-    // Find module m for this function
-    Module m = null;
-    for (Dsymbol p = fd.parent; p; p = p.parent)
-    {
-        m = p.isModule();
-        if (m)
-            break;
-    }
 
     Dsymbols deferToObj;                   // write these to OBJ file later
     Array!(elem*) varsInScope;

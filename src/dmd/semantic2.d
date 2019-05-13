@@ -451,13 +451,21 @@ private extern(C++) final class Semantic2Visitor : Visitor
 
     override void visit(Import i)
     {
+        static indent = 0;
         //printf("Import::semantic2('%s')\n", toChars());
         if (i.mod)
         {
+            ++indent;
             i.mod.semantic2(null);
+            --indent;
             if (i.mod.needmoduleinfo)
             {
-                //printf("module5 %s because of %s\n", sc.module.toChars(), mod.toChars());
+                if(sc !is null)
+                {
+                    foreach(x; 0 .. indent)
+                        printf("\t");
+                    printf("module5 %s because of %s:%d\n", i.mod.toPrettyChars(), sc._module.toPrettyChars(), i.loc.linnum);
+                }
                 if (sc)
                     sc._module.needmoduleinfo = 1;
             }
