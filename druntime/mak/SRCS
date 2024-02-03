@@ -80,6 +80,7 @@ SRCS=\
 	src\core\internal\gc\impl\conservative\gc.d \
 	src\core\internal\gc\impl\manual\gc.d \
 	src\core\internal\gc\impl\proto\gc.d \
+	src\core\internal\gc\impl\sdc\gc.d \
 	\
 	src\core\internal\util\array.d \
 	src\core\internal\util\math.d \

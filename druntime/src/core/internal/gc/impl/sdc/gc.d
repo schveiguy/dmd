@@ -1,18 +1,21 @@
 module core.internal.gc.impl.sdc.gc;
 
 import core.gc.gcinterface;
+static import core.memory;
+import core.stdc.string : memcpy, memset, memmove;
 
 import cstdlib = core.stdc.stdlib : calloc, free, malloc, realloc;
 
 // define all the extern(C) functions we need from libdmalloc
 
-extern(C) {
+extern(C) nothrow {
         void onOutOfMemoryError(void* pretend_sideffect = null, string file = __FILE__, size_t line = __LINE__) @trusted nothrow @nogc;
 
         // hooks from sdc
-        void *__sd_gc_druntime_qalloc(size_t size, uint bits, void *finalizer);
+        BlkInfo __sd_gc_druntime_qalloc(size_t size, uint bits, void *finalizer);
         void *__sd_gc_realloc(void *ptr, size_t size);
-        void *__sd_gc_free(void *ptr);
+        @nogc void *__sd_gc_free(void *ptr);
+        @nogc BlkInfo __sd_gc_druntime_allocInfo(void *ptr);
 }
 
 private pragma(crt_constructor) void gc_conservative_ctor()
@@ -26,18 +29,14 @@ extern(C) void _d_register_sdc_gc()
     registerGCFactory("sdc", &initialize);
 }
 
+// since all the real work is done in the SDC library, the class is just a
+// shim, and can just be initialized at compile time.
+private __gshared SnazzyGC instance = new SnazzyGC;
+
 private GC initialize()
 {
-    import core.lifetime : emplace;
-
-    // REVIEW: this is allocating the GC using the GC if we hook malloc...
-    auto gc = cast(ConservativeGC) cstdlib.malloc(__traits(classInstanceSize, ConservativeGC));
-    if (!gc)
-        onOutOfMemoryError();
-
-    return emplace(gc);
+    return instance;
 }
-
 
 class SnazzyGC : GC
 {
@@ -84,7 +83,8 @@ class SnazzyGC : GC
     uint getAttr(void* p) nothrow
     {
         // TODO: add once there is a hook
-        return 0;
+        auto blkinfo = __sd_gc_druntime_allocInfo(p);
+        return blkinfo.attr;
     }
 
     /**
@@ -213,8 +213,8 @@ class SnazzyGC : GC
      */
     void* addrOf(void* p) nothrow @nogc
     {
-        // TODO: add once there is a hook
-        return null;
+        auto blkinfo = __sd_gc_druntime_allocInfo(p);
+        return blkinfo.base;
     }
 
     /**
@@ -223,8 +223,8 @@ class SnazzyGC : GC
      */
     size_t sizeOf(void* p) nothrow @nogc
     {
-        // TODO: add once there is a hook
-        return 0;
+        auto blkinfo = __sd_gc_druntime_allocInfo(p);
+        return blkinfo.size;
     }
 
     /**
@@ -233,8 +233,7 @@ class SnazzyGC : GC
      */
     BlkInfo query(void* p) nothrow
     {
-        // TODO: add once there is a hook
-        return BlkInfo();
+        return __sd_gc_druntime_allocInfo(p);
     }
 
     /**
