@@ -35,6 +35,8 @@ private __gshared SnazzyGC instance = new SnazzyGC;
 
 private GC initialize()
 {
+    import core.stdc.stdio;
+    printf("using SDC GC!\n");
     return instance;
 }
 
