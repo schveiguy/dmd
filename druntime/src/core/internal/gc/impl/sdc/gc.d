@@ -12,7 +12,9 @@ extern(C) nothrow {
         void onOutOfMemoryError(void* pretend_sideffect = null, string file = __FILE__, size_t line = __LINE__) @trusted nothrow @nogc;
 
         // hooks from sdc
-        BlkInfo __sd_gc_druntime_qalloc(size_t size, uint bits, void *finalizer);
+        void __sd_gc_druntime_qalloc(BlkInfo *result, size_t size, uint bits, void *finalizer);
+        //BlkInfo __sd_gc_druntime_qalloc(size_t size, uint bits, void *finalizer);
+        void __sd_gc_thread_init();
         void *__sd_gc_realloc(void *ptr, size_t size);
         @nogc void *__sd_gc_free(void *ptr);
         @nogc BlkInfo __sd_gc_druntime_allocInfo(void *ptr);
@@ -25,6 +27,8 @@ private pragma(crt_constructor) void gc_conservative_ctor()
 
 extern(C) void _d_register_sdc_gc()
 {
+    // HACK: this is going to set up the ThreadCache in SDC for the main thread.
+    __sd_gc_thread_init();
     import core.gc.registry;
     registerGCFactory("sdc", &initialize);
 }
@@ -115,7 +119,9 @@ class SnazzyGC : GC
         if(!size)
             return null;
         // TODO: deal with finalizer/typeinfo
-        auto blkinfo = __sd_gc_druntime_qalloc(size, bits, null);
+        //auto blkinfo = __sd_gc_druntime_qalloc(size, bits, null);
+        BlkInfo blkinfo;
+        __sd_gc_druntime_qalloc(&blkinfo, size, bits, null);
         if(blkinfo.base && !(bits & BlkAttr.NO_SCAN))
         {
             // set the data not allocated to all 0
@@ -132,7 +138,9 @@ class SnazzyGC : GC
         if(!size)
             return BlkInfo.init;
         // TODO: deal with finalizer/typeinfo
-        auto blkinfo = __sd_gc_druntime_qalloc(size, bits, null);
+        //auto blkinfo = __sd_gc_druntime_qalloc(size, bits, null);
+        BlkInfo blkinfo;
+        __sd_gc_druntime_qalloc(&blkinfo, size, bits, null);
         if(blkinfo.base && !(bits & BlkAttr.NO_SCAN))
         {
             // set the data not allocated to all 0
@@ -149,7 +157,9 @@ class SnazzyGC : GC
         if(!size)
             return null;
         // TODO: deal with finalizer/typeinfo
-        auto blkinfo = __sd_gc_druntime_qalloc(size, bits, null);
+        //auto blkinfo = __sd_gc_druntime_qalloc(size, bits, null);
+        BlkInfo blkinfo;
+        __sd_gc_druntime_qalloc(&blkinfo, size, bits, null);
         if(blkinfo.base)
         {
             if(!(bits & BlkAttr.NO_SCAN))

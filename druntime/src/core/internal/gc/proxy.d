@@ -51,8 +51,6 @@ extern (C)
 
     void gc_init()
     {
-        import core.stdc.stdio;
-        printf("I'm here, I'm going to initialize the configs\n");
         instanceLock.lock();
         if (!isInstanceInit)
         {
