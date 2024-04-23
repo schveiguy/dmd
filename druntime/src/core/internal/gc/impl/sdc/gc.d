@@ -15,6 +15,7 @@ extern(C) nothrow {
         void __sd_gc_druntime_qalloc(BlkInfo *result, size_t size, uint bits, void *finalizer);
         //BlkInfo __sd_gc_druntime_qalloc(size_t size, uint bits, void *finalizer);
         void __sd_gc_thread_init();
+        void __sd_gc_collect();
         void *__sd_gc_realloc(void *ptr, size_t size);
         @nogc void *__sd_gc_free(void *ptr);
         @nogc BlkInfo __sd_gc_druntime_allocInfo(void *ptr);
@@ -64,7 +65,7 @@ class SnazzyGC : GC
      */
     void collect() nothrow
     {
-        // TODO: add once there is a hook
+        __sd_gc_collect();
     }
 
     /**
@@ -72,7 +73,8 @@ class SnazzyGC : GC
      */
     void collectNoStack() nothrow
     {
-        // TODO: add once there is a hook
+        // just do the same thing for now? Not sure why this exists.
+        __sd_gc_collect();
     }
 
     /**
@@ -98,8 +100,8 @@ class SnazzyGC : GC
      */
     uint setAttr(void* p, uint mask) nothrow
     {
-        // TODO: add once there is a hook
-        return 0;
+        // SDC GC does not support setting attributes after allocation
+        return getAttr(p);
     }
 
     /**
@@ -107,8 +109,8 @@ class SnazzyGC : GC
      */
     uint clrAttr(void* p, uint mask) nothrow
     {
-        // TODO: add once there is a hook
-        return 0;
+        // SDC GC does not support setting attributes after allocation
+        return getAttr(p);
     }
 
     /**
@@ -119,14 +121,7 @@ class SnazzyGC : GC
         if(!size)
             return null;
         // TODO: deal with finalizer/typeinfo
-        //auto blkinfo = __sd_gc_druntime_qalloc(size, bits, null);
-        BlkInfo blkinfo;
-        __sd_gc_druntime_qalloc(&blkinfo, size, bits, null);
-        if(blkinfo.base && !(bits & BlkAttr.NO_SCAN))
-        {
-            // set the data not allocated to all 0
-            memset(blkinfo.base + size, 0, blkinfo.size - size);
-        }
+        BlkInfo blkinfo = qalloc(size, bits, ti);
         return blkinfo.base;
     }
 
