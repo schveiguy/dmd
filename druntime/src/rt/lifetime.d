@@ -1050,9 +1050,11 @@ Params:
 Returns:
     newly allocated item
 */
-extern (C) void* _d_newitemU(scope const TypeInfo _ti) pure nothrow @weak
+extern (C) void* _d_newitemU(scope const TypeInfo _ti) nothrow @weak
 {
+    import core.stdc.stdio;
     auto ti = unqualify(_ti);
+    printf("here, in qalloc: %p\n", cast(void*)ti);
     auto flags = !(ti.flags & 1) ? BlkAttr.NO_SCAN : 0;
     immutable tiSize = structTypeInfoSize(ti);
     immutable itemSize = ti.tsize;

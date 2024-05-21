@@ -2831,7 +2831,7 @@ T* _d_newitemT(T)() @trusted
     if (tiSize)
         flags |= GC.BlkAttr.STRUCTFINAL | GC.BlkAttr.FINALIZE;
 
-    auto blkInfo = GC.qalloc(totalSize, flags, null);
+    auto blkInfo = GC.qalloc(totalSize, flags, typeid(T));
     auto p = blkInfo.base;
 
     if (tiSize)

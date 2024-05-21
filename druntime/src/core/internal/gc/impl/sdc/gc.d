@@ -14,11 +14,52 @@ extern(C) nothrow {
         // hooks from sdc
         void __sd_gc_druntime_qalloc(BlkInfo *result, size_t size, uint bits, void *finalizer);
         //BlkInfo __sd_gc_druntime_qalloc(size_t size, uint bits, void *finalizer);
-        void __sd_gc_thread_init();
+        void __sd_gc_init();
         void __sd_gc_collect();
         void *__sd_gc_realloc(void *ptr, size_t size);
         @nogc void *__sd_gc_free(void *ptr);
         @nogc BlkInfo __sd_gc_druntime_allocInfo(void *ptr);
+        void __sd_gc_setBlockFinalizer(typeof(&_destroyBlockCtx) fn);
+        void rt_finalize2(void* p, bool det, bool resetMemory) nothrow;
+}
+
+enum TYPEINFO_IN_BLOCK = cast(void*)1;
+
+extern(C) void _destroyBlockCtx(void *ptr, size_t size, void *context)
+{
+    import core.stdc.stdio;
+
+    //printf("here, ptr = %p, size = %ld, context = %p\n", ptr, size, context);
+    // if typeinfo is cast(void*)1, then the TypeInfo is inside the block (i.e.
+    // this is an object).
+    if(context == TYPEINFO_IN_BLOCK)
+    {
+        //printf("finalizing class\n");
+        rt_finalize2(ptr, false, false);
+    }
+    else
+    {
+        // context is a typeinfo pointer, which can be used to destroy the
+        // elements in the block.
+        auto ti = cast(TypeInfo)context;
+        auto elemSize = ti.tsize;
+        if(elemSize == 0)
+        {
+            // call the destructor on the pointer, and be done
+            ti.destroy(ptr);
+        }
+        else
+        {
+            // if an array, ensure the size is a multiple of the type size.
+            assert(size % elemSize == 0);
+            while(size > 0)
+            {
+                ti.destroy(ptr);
+                ptr += elemSize;
+                size -= elemSize;
+            }
+        }
+    }
 }
 
 private pragma(crt_constructor) void gc_conservative_ctor()
@@ -29,7 +70,8 @@ private pragma(crt_constructor) void gc_conservative_ctor()
 extern(C) void _d_register_sdc_gc()
 {
     // HACK: this is going to set up the ThreadCache in SDC for the main thread.
-    __sd_gc_thread_init();
+    __sd_gc_init();
+    __sd_gc_setBlockFinalizer(&_destroyBlockCtx);
     import core.gc.registry;
     registerGCFactory("sdc", &initialize);
 }
@@ -45,7 +87,7 @@ private GC initialize()
     return instance;
 }
 
-class SnazzyGC : GC
+final class SnazzyGC : GC
 {
     void enable()
     {
@@ -130,12 +172,37 @@ class SnazzyGC : GC
      */
     BlkInfo qalloc(size_t size, uint bits, const scope TypeInfo ti) nothrow
     {
+        import core.stdc.stdio;
+        /*if(ti !is null)
+            printf("here %s\n", ti.toString().ptr);
+        else
+            printf("here null typeinfo\n");*/
         if(!size)
             return BlkInfo.init;
         // TODO: deal with finalizer/typeinfo
         //auto blkinfo = __sd_gc_druntime_qalloc(size, bits, null);
         BlkInfo blkinfo;
-        __sd_gc_druntime_qalloc(&blkinfo, size, bits, null);
+        // need to check if ti is a class
+        void *ctx = null;
+        if(auto cti = cast(TypeInfo_Class)ti)
+        {
+            //printf("allocating class\n");
+            ctx = TYPEINFO_IN_BLOCK;
+        }
+        else if(auto sti = cast(TypeInfo_Struct)ti)
+        {
+            if(sti.xdtor)
+            {
+                //printf("allocating struct with finalizer\n");
+                ctx = cast(void*)sti;
+            }
+            else {
+                //printf("allocating struct\n");
+            }
+        }
+        // else, no typeinfo needed
+
+        __sd_gc_druntime_qalloc(&blkinfo, size, bits, ctx);
         if(blkinfo.base && !(bits & BlkAttr.NO_SCAN))
         {
             // set the data not allocated to all 0
@@ -154,7 +221,9 @@ class SnazzyGC : GC
         // TODO: deal with finalizer/typeinfo
         //auto blkinfo = __sd_gc_druntime_qalloc(size, bits, null);
         BlkInfo blkinfo;
-        __sd_gc_druntime_qalloc(&blkinfo, size, bits, null);
+        // need to check if ti is a class
+        bool isObject = (cast(TypeInfo_Class)ti) !is null;
+        __sd_gc_druntime_qalloc(&blkinfo, size, bits, isObject ? TYPEINFO_IN_BLOCK : cast(void *)ti);
         if(blkinfo.base)
         {
             if(!(bits & BlkAttr.NO_SCAN))
