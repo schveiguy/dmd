@@ -37,6 +37,8 @@ extern (C)
     // do not import GC modules, they might add a dependency to this whole module
     void _d_register_conservative_gc();
     void _d_register_manual_gc();
+    void _d_register_sdc_gc();
+    void __sd_thread_scanAll();
 
     // if you don't want to include the default GCs, replace during link by another implementation
     void* register_default_gcs() @weak
@@ -46,7 +48,9 @@ extern (C)
         // avoid being optimized away
         auto reg1 = &_d_register_conservative_gc;
         auto reg2 = &_d_register_manual_gc;
-        return reg1 < reg2 ? reg1 : reg2;
+        auto reg3 = &_d_register_sdc_gc;
+        auto reg4 = &__sd_thread_scanAll;
+        return reg1 < reg2 ? reg1 : reg2 < reg3 ? reg2 : reg3 < reg4 ? reg3 : reg4;
     }
 
     void gc_init()
