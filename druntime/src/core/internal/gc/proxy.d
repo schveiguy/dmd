@@ -38,7 +38,7 @@ extern (C)
     void _d_register_conservative_gc();
     void _d_register_manual_gc();
     void _d_register_sdc_gc();
-    void __sd_thread_scanAll();
+    void thread_scanAll_C();
 
     // if you don't want to include the default GCs, replace during link by another implementation
     void* register_default_gcs() @weak
@@ -49,7 +49,7 @@ extern (C)
         auto reg1 = &_d_register_conservative_gc;
         auto reg2 = &_d_register_manual_gc;
         auto reg3 = &_d_register_sdc_gc;
-        auto reg4 = &__sd_thread_scanAll;
+        auto reg4 = &thread_scanAll_C;
         return reg1 < reg2 ? reg1 : reg2 < reg3 ? reg2 : reg3 < reg4 ? reg3 : reg4;
     }
 

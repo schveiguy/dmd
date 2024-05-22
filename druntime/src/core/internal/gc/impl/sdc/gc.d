@@ -82,7 +82,7 @@ alias ThreadScanFn = extern(C) void function(void *start, void *end, void *conte
 alias ScanAllThreadsFn = void delegate(void*, void*) nothrow;
 extern (C) void thread_scanAll(scope ScanAllThreadsFn scan) nothrow;
 
-extern(C) void __sd_thread_scanAll(ThreadScanFn scanFn, void *context)
+extern(C) void thread_scanAll_C(ThreadScanFn scanFn, void *context)
 {
     static struct Scanner
     {
