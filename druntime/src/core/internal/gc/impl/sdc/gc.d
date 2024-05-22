@@ -76,20 +76,20 @@ extern(C) void _d_register_sdc_gc()
     registerGCFactory("sdc", &initialize);
 }
 
-alias ThreadScanFn = extern(C) void function(void *start, void *end, void *context) nothrow;
+alias ThreadScanFn = extern(C) void function(void *context, void *start, void *end) nothrow;
 
 // copied from core.thread.threadbase
 alias ScanAllThreadsFn = void delegate(void*, void*) nothrow;
 extern (C) void thread_scanAll(scope ScanAllThreadsFn scan) nothrow;
 
-extern(C) void thread_scanAll_C(ThreadScanFn scanFn, void *context)
+extern(C) void thread_scanAll_C(void *context, ThreadScanFn scanFn)
 {
     static struct Scanner
     {
         ThreadScanFn scanFn;
         void *context;
         void doScan(void *start, void *end) nothrow {
-            scanFn(start, end, context);
+            scanFn(context, start, end);
         }
     }
 
