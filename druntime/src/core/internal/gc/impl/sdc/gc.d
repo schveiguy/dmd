@@ -194,41 +194,23 @@ final class SnazzyGC : GC
     BlkInfo qalloc(size_t size, uint bits, const scope TypeInfo ti) nothrow
     {
         import core.stdc.stdio;
-        /*if(ti !is null)
-            printf("here %s\n", ti.toString().ptr);
-        else
-            printf("here null typeinfo\n");*/
+        //printf("here, bits are %x\n", bits);
         if(!size)
             return BlkInfo.init;
         // TODO: deal with finalizer/typeinfo
         //auto blkinfo = __sd_gc_druntime_qalloc(size, bits, null);
         BlkInfo blkinfo;
         // need to check if ti is a class
+
+        // establish the context pointer. If no finalizer is present, then pass null.
+        // if finalize is set,
+        //   if it's a class, then the finalizer will be in the block directly.
+        //   if it's a struct, then the typeinfo will be used to finalize.
         void *ctx = null;
-        if(auto cti = cast(TypeInfo_Class)ti)
-        {
-            //printf("allocating class\n");
-            ctx = TYPEINFO_IN_BLOCK;
-        }
-        else if(auto sti = cast(TypeInfo_Struct)ti)
-        {
-            if(sti.xdtor)
-            {
-                //printf("allocating struct with finalizer\n");
-                ctx = cast(void*)sti;
-            }
-            else {
-                //printf("allocating struct\n");
-            }
-        }
-        // else, no typeinfo needed
+        if (bits & BlkAttr.FINALIZE)
+            ctx = (bits & BlkAttr.STRUCTFINALIZE) ? cast(void*)ti : TYPEINFO_IN_BLOCK;
 
         __sd_gc_druntime_qalloc(&blkinfo, size, bits, ctx);
-        if(blkinfo.base && !(bits & BlkAttr.NO_SCAN))
-        {
-            // set the data not allocated to all 0
-            memset(blkinfo.base + size, 0, blkinfo.size - size);
-        }
         return blkinfo;
     }
 
@@ -239,12 +221,15 @@ final class SnazzyGC : GC
     {
         if(!size)
             return null;
-        // TODO: deal with finalizer/typeinfo
         //auto blkinfo = __sd_gc_druntime_qalloc(size, bits, null);
         BlkInfo blkinfo;
-        // need to check if ti is a class
-        bool isObject = (cast(TypeInfo_Class)ti) !is null;
-        __sd_gc_druntime_qalloc(&blkinfo, size, bits, isObject ? TYPEINFO_IN_BLOCK : cast(void *)ti);
+
+        void *ctx = null;
+        if (bits & BlkAttr.FINALIZE)
+            ctx = (bits & BlkAttr.STRUCTFINALIZE) ? cast(void*)ti : TYPEINFO_IN_BLOCK;
+
+        // TODO: need to hook SDC's zero alloc function
+        __sd_gc_druntime_qalloc(&blkinfo, size, bits, cast(void *)ti);
         if(blkinfo.base)
         {
             if(!(bits & BlkAttr.NO_SCAN))
