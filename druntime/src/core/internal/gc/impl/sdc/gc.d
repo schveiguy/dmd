@@ -208,7 +208,7 @@ final class SnazzyGC : GC
         //   if it's a struct, then the typeinfo will be used to finalize.
         void *ctx = null;
         if (bits & BlkAttr.FINALIZE)
-            ctx = (bits & BlkAttr.STRUCTFINALIZE) ? cast(void*)ti : TYPEINFO_IN_BLOCK;
+            ctx = (bits & BlkAttr.STRUCTFINAL) ? cast(void*)ti : TYPEINFO_IN_BLOCK;
 
         __sd_gc_druntime_qalloc(&blkinfo, size, bits, ctx);
         return blkinfo;
@@ -226,7 +226,7 @@ final class SnazzyGC : GC
 
         void *ctx = null;
         if (bits & BlkAttr.FINALIZE)
-            ctx = (bits & BlkAttr.STRUCTFINALIZE) ? cast(void*)ti : TYPEINFO_IN_BLOCK;
+            ctx = (bits & BlkAttr.STRUCTFINAL) ? cast(void*)ti : TYPEINFO_IN_BLOCK;
 
         // TODO: need to hook SDC's zero alloc function
         __sd_gc_druntime_qalloc(&blkinfo, size, bits, cast(void *)ti);
