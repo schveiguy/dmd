@@ -19,13 +19,12 @@ extern(C) nothrow {
         void *__sd_gc_realloc(void *ptr, size_t size);
         @nogc void *__sd_gc_free(void *ptr);
         @nogc BlkInfo __sd_gc_druntime_allocInfo(void *ptr);
-        void __sd_gc_setBlockFinalizer(typeof(&_destroyBlockCtx) fn);
         void rt_finalize2(void* p, bool det, bool resetMemory) nothrow;
 }
 
 enum TYPEINFO_IN_BLOCK = cast(void*)1;
 
-extern(C) void _destroyBlockCtx(void *ptr, size_t size, void *context)
+extern(C) void __sd_destroyBlockCtx(void *ptr, size_t size, void *context)
 {
     import core.stdc.stdio;
 
@@ -71,7 +70,6 @@ extern(C) void _d_register_sdc_gc()
 {
     // HACK: this is going to set up the ThreadCache in SDC for the main thread.
     __sd_gc_init();
-    __sd_gc_setBlockFinalizer(&_destroyBlockCtx);
     import core.gc.registry;
     registerGCFactory("sdc", &initialize);
 }
