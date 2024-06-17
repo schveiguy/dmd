@@ -39,7 +39,7 @@ extern (C)
     void _d_register_manual_gc();
     void _d_register_sdc_gc();
     void thread_scanAll_C();
-    void __sd_destroyBlockCtx();
+    void __sd_run_finalizer();
 
     // if you don't want to include the default GCs, replace during link by another implementation
     void* register_default_gcs() @weak
@@ -51,7 +51,7 @@ extern (C)
         auto reg2 = &_d_register_manual_gc;
         auto reg3 = &_d_register_sdc_gc;
         auto reg4 = &thread_scanAll_C;
-        auto reg5 = &__sd_destroyBlockCtx;
+        auto reg5 = &__sd_run_finalizer;
         return reg1 < reg2 ? reg1 : reg2 < reg3 ? reg2 : reg3 < reg4 ? reg3 : reg4 < reg5 ? reg4 : reg5;
     }
 
