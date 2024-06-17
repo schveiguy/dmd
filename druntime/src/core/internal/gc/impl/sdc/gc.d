@@ -51,7 +51,8 @@ extern(C) void __sd_destroyBlockCtx(void *ptr, size_t size, void *context)
         {
             // if an array, ensure the size is a multiple of the type size.
             assert(size % elemSize == 0);
-            while(size > 0)
+            // just in case, make sure we don't wrap past 0
+            while(size >= elemSize)
             {
                 ti.destroy(ptr);
                 ptr += elemSize;
