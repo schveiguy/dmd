@@ -53,6 +53,8 @@ endif
 DMD=../generated/$(OS)/$(BUILD)/$(MODEL)/dmd$(DOTEXE)
 INSTALL_DIR=../../install
 
+SDCALLOC?=../../sdc/lib/libdmdalloc.a
+
 # directory where the html files for the documentation are placed
 DOC_OUTPUT_DIR=doc
 IMPDIR=import
@@ -413,8 +415,8 @@ $(DRUNTIMESOLIB): $(OBJS) $(SRCS) $(DMD)
 
 ################### Library generation #########################
 
-$(DRUNTIME): $(OBJS) $(SRCS) $(DMD)
-	$(DMD) -lib -of$(DRUNTIME) -Xfdruntime.json $(DFLAGS) $(SRCS) $(OBJS)
+$(DRUNTIME): $(OBJS) $(SRCS) $(DMD) $(SDCALLOC)
+	$(DMD) -lib -of$(DRUNTIME) $(SDCALLOC) -Xfdruntime.json $(DFLAGS) $(SRCS) $(OBJS)
 
 lib: $(DRUNTIME)
 
