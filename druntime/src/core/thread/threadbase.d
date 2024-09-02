@@ -559,6 +559,10 @@ package(core.thread):
         return cast(Mutex)_slock.ptr;
     }
 
+    @property public static Mutex __slock_DO_NOT_USE() nothrow @nogc {
+        return slock;
+    }
+
     __gshared align(mutexAlign) void[mutexClassInstanceSize] _slock;
 
     static void initLocks() @nogc nothrow

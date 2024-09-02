@@ -96,6 +96,16 @@ extern(C) void __sd_gc_finalize(void *ptr, size_t size, void *context)
     }
 }
 
+extern(C) void __sd_gc_stop_the_world_lock() {
+    import core.thread.threadbase;
+    ThreadBase.__slock_DO_NOT_USE.lock_nothrow();
+}
+
+extern(C) void __sd_gc_stop_the_world_unlock() {
+    import core.thread.threadbase;
+    ThreadBase.__slock_DO_NOT_USE.unlock_nothrow();
+}
+
 private pragma(crt_constructor) void gc_conservative_ctor()
 {
     _d_register_sdc_gc();
