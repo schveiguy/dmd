@@ -2065,6 +2065,8 @@ struct Gcx
             }
             else if (usedSmallPages > 0)
             {
+		//import core.stdc.stdio;
+		//printf("===== small used pages of %d exceeded threshold of %f\n", usedSmallPages, smallCollectThreshold);
                 fullcollect();
                 if (lowMem)
                     minimize();
@@ -2154,6 +2156,8 @@ struct Gcx
             else if (usedLargePages > 0)
             {
                 minimizeAfterNextCollection = true;
+		//import core.stdc.stdio;
+		//printf("===== large used pages of %d exceeded threshold of %f\n", usedLargePages, largeCollectThreshold);
                 fullcollect();
             }
             // If alloc didn't yet succeed retry now that we collected/minimized
@@ -2661,8 +2665,11 @@ struct Gcx
 
         // Scan roots[]
         debug(COLLECT_PRINTF) printf("\tscan roots[]\n");
+	//int totalRoots = 0;
+	//int totalRanges = 0;
         foreach (root; roots)
         {
+		//++totalRoots;
             markFn(cast(void*)&root.proot, cast(void*)(&root.proot + 1));
         }
 
@@ -2671,9 +2678,12 @@ struct Gcx
         //log++;
         foreach (range; ranges)
         {
+		//++totalRanges;
             debug(COLLECT_PRINTF) printf("\t\t%p .. %p\n", range.pbot, range.ptop);
             markFn(range.pbot, range.ptop);
         }
+	//import core.stdc.stdio;
+	//printf("===== roots count is %d and ranges count is %d\n", totalRoots, totalRanges);
         //log--;
     }
 
@@ -2686,8 +2696,11 @@ struct Gcx
 
         // Scan roots[]
         debug(COLLECT_PRINTF) printf("\tcollect roots[]\n");
+	//int totalRoots = 0;
+	//int totalRanges = 0;
         foreach (root; roots)
         {
+		//++totalRoots;
             toscanRoots.push(root);
         }
 
@@ -2695,9 +2708,12 @@ struct Gcx
         debug(COLLECT_PRINTF) printf("\tcollect ranges[]\n");
         foreach (range; ranges)
         {
+		//++totalRanges;
             debug(COLLECT_PRINTF) printf("\t\t%p .. %p\n", range.pbot, range.ptop);
             collectRoots(range.pbot, range.ptop);
         }
+	//import core.stdc.stdio;
+	//printf("===== roots count is %d and ranges count is %d\n", totalRoots, totalRanges);
     }
 
     // collection step 3: finalize unreferenced objects, recover full pages with no live objects
@@ -3283,6 +3299,10 @@ Lmark:
         ++numCollections;
 
         updateCollectThresholds();
+
+	//import core.stdc.stdio;
+	//printf("===== after running GC, small pages are %d, threshold is now %f\n", usedSmallPages, smallCollectThreshold);
+	//printf("===== after running GC, large pages are %d, threshold is now %f\n", usedLargePages, largeCollectThreshold);
         if (doFork && isFinal)
             return fullcollect(true, false);
         return freedPages;

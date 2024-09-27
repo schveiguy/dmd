@@ -2289,7 +2289,7 @@ else version (Posix)
             Thread obj = Thread.getThis();
             assert(obj !is null);
 
-            if ( !obj.m_lock )
+            if ( obj && !obj.m_lock )
             {
                 obj.m_curr.tstack = sp;
             }
@@ -2299,7 +2299,7 @@ else version (Posix)
             Thread obj = Thread.getThis();
             assert(obj !is null);
 
-            if ( !obj.m_lock )
+            if ( obj && !obj.m_lock )
             {
                 obj.m_curr.tstack = obj.m_curr.bstack;
             }

@@ -41,7 +41,9 @@ extern(C) nothrow {
 
         // hooks from sdc
         void* __sd_gc_alloc_finalizer(size_t size, void *finalizer);
+        void* __sd_gc_alloc_finalizer_no_pointers(size_t size, void *finalizer);
         void* __sd_gc_alloc(size_t size);
+        void* __sd_gc_alloc_no_pointers(size_t size);
         void __sd_gc_init();
         void __sd_gc_collect();
         void *__sd_gc_realloc(void *ptr, size_t size);
@@ -223,9 +225,19 @@ final class SnazzyGC : GC
             bits |= BlkAttr.FINALIZE;
         size += sizeAdjustment(size, bits);
         if(ctx || (bits & BlkAttr.APPENDABLE))
-            return __sd_gc_alloc_finalizer(size, ctx);
+	{
+		if(bits & BlkAttr.NO_SCAN)
+			return __sd_gc_alloc_finalizer_no_pointers(size, ctx);
+		else
+			return __sd_gc_alloc_finalizer(size, ctx);
+	}
         else
-            return __sd_gc_alloc(size);
+	{
+		if(bits & BlkAttr.NO_SCAN)
+			return __sd_gc_alloc_no_pointers(size);
+		else
+			return __sd_gc_alloc(size);
+	}
     }
 
     /*
